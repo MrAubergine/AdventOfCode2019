@@ -10,6 +10,14 @@ namespace AdventOfCode2019
     {
         static void Main(string[] args)
         {
+            IDay Day = new Day1();
+
+            Day.Part1();
+            Day.Part2();
+
+            Console.WriteLine("****");
+            Console.WriteLine("Press any key to Continue");
+            Console.ReadKey();
         }
     }
 }
