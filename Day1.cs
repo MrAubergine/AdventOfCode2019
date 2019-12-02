@@ -13,7 +13,8 @@ namespace AdventOfCode2019
             int Total = 0;
             foreach (int Input in InputData)
             {
-                Total = Total + ((Input / 3) - 2);
+                int Fuel = ((Input / 3) - 2);
+                Total += Fuel;
             }
 
             Console.WriteLine("Day1 Part1 Result = {0}", Total);
@@ -24,7 +25,16 @@ namespace AdventOfCode2019
             int Total = 0;
             foreach (int Input in InputData)
             {
-                Total = Total + ((Input / 3) - 2);
+                int Mass = Input;
+                while (Mass > 0)
+                {
+                    int Fuel = ((Mass / 3) - 2);
+                    if( Fuel>0 )
+                    {
+                        Total += Fuel;
+                    }
+                    Mass = Fuel;
+                }
             }
 
             Console.WriteLine("Day1 Part2 Result = {0}", Total);
