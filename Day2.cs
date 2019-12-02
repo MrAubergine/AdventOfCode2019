@@ -10,13 +10,76 @@ namespace AdventOfCode2019
     {
         public void Part1()
         {
-             Console.WriteLine("Day2 Part1 Result = {0}", 0);
+            ResetMem();
+
+            Mem[1] = 12;
+            Mem[2] = 2;
+
+            Execute(0);
+
+            Console.WriteLine("Day2 Part1 Result = {0}", Mem[0]);
         }
 
         public void Part2()
         {
-              Console.WriteLine("Day2 Part2 Result = {0}", 0);
+            for (int noun = 0; noun <= 99; noun++)
+            {
+                for (int verb = 0; verb <= 99; verb++)
+                {
+                    ResetMem();
+
+                    Mem[1] = noun;
+                    Mem[2] = verb;
+
+                    Execute(0);
+
+                    if( Mem[0] == 19690720)
+                    {
+                        Console.WriteLine("Day2 Part2 Result = {0} {1}", noun, verb);
+                        return;
+                    }
+                }
+            }
         }
+
+        private bool Execute(int ip)
+        {
+            while (Mem[ip] != 99)
+            {
+                int op1 = Mem[ip + 1];
+                int op2 = Mem[ip + 2];
+                int op3 = Mem[ip + 3];
+
+                switch (Mem[ip])
+                {
+                    case 1:
+                        Mem[op3] = Mem[op1] + Mem[op2];
+                        break;
+                    case 2:
+                        Mem[op3] = Mem[op1] * Mem[op2];
+                        break;
+                    default:
+                        Console.WriteLine("Day1 Part1 Program Error at {0}", ip);
+                        return false;
+                }
+                ip += 4;
+            }
+
+            return true;
+        }
+
+        public void ResetMem()
+        {
+            Mem = new int[InputData.Length];
+
+            int Addr = 0;
+            foreach (int Val in InputData)
+            {
+                Mem[Addr++] = Val;
+            }
+        }
+
+        private int[] Mem;
 
         private int[] InputData = new int[]
         {
