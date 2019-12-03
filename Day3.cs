@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AdventOfCode2019
 {
-    class Point
+    public class Point
     {
         public int x;
         public int y;
@@ -17,47 +17,28 @@ namespace AdventOfCode2019
             y = iy;
         }
     }
-    class WireSection
-    {
-        public int x1;
-        public int y1;
-        public int x2;
-        public int y2;
 
-        public WireSection(int ix1, int iy1, int ix2, int iy2)
+    public class PointEqualityComparer : IEqualityComparer<Point>
+    {
+        public bool Equals(Point p1, Point p2)
         {
-            x1 = ix1;
-            y1 = iy1;
-            x2 = ix2;
-            y2 = iy2;
+            return ((p1.x == p2.x) & (p1.y == p2.y));
         }
 
-        public HashSet<Point> Intersects(WireSection Other)
+        public int GetHashCode(Point p)
         {
-            HashSet<Point> I = new HashSet<Point>();
+            string combined = p.x.ToString() + "|" + p.y.ToString();
+            return (combined.GetHashCode());
+        }
+    }
 
-            if( x1==x2 )
-            {
-                for( int y=y1; y<y2; y++)
-                {
-                    if (y >= Other.y1 && y <= Other.y2 && x1 >= Other.x1 && x1 <= Other.x2)
-                        I.Add(new Point(x1, y));
-                }
-            }
-            else if (y1 == y2)
-            {
-                for (int x = x1; x < x2; x++)
-                {
-                    if (x >= Other.x1 && x <= Other.x2 && y1 >= Other.y1 && y1 <= Other.y2)
-                        I.Add(new Point(x, y1));
-                }
-            }
-            else
-            {
-                Console.WriteLine("Argh! Can't cope with diagonals");
-            }
+    class PData
+    {
+        public int dist;
 
-            return I;
+        public PData(int idist)
+        {
+            dist = idist;
         }
     }
 
@@ -65,85 +46,119 @@ namespace AdventOfCode2019
     {
         public void Part1()
         {
-            String[] Sections;
+            Dictionary<Point, PData> Intersections;
+            GenerateIntersections(out Intersections);
 
-            Sections = InputData[0].Split(',');
-            List<WireSection> Wire1 = new List<WireSection>();
-            GenerateWire(Sections, out Wire1);
-
-            Sections = InputData[1].Split(',');
-            List<WireSection> Wire2 = new List<WireSection>();
-            GenerateWire(Sections, out Wire2);
-
-            HashSet<Point> Intersections = new HashSet<Point>();
-
-            foreach(WireSection WireSection1 in Wire1)
+            int mindist = int.MaxValue;
+            foreach (KeyValuePair<Point, PData> p1 in Intersections)
             {
-                foreach(WireSection WireSection2 in Wire2)
-                {
-                    Intersections.UnionWith(WireSection1.Intersects(WireSection2));
-                }
+                int d = Math.Abs(p1.Key.x) + Math.Abs(p1.Key.y);
+                if (d>0 && d < mindist)
+                    mindist = d;
             }
 
-            int MinDist = int.MaxValue;
-
-            foreach(Point p in Intersections)
-            {
-                int dist = Math.Abs(p.x) + Math.Abs(p.y);
-                if (dist > 0 && dist < MinDist)
-                {
-                    MinDist = dist;
-                }
-            }
-
-            Console.WriteLine("Day3 Part1 Result = {0}", MinDist);
+            Console.WriteLine("Day3 Part1 Result = {0}", mindist);
         }
 
         public void Part2()
         {
+            Dictionary<Point, PData> Intersections;
+            GenerateIntersections(out Intersections);
+
+            int mindist = int.MaxValue;
+            foreach (KeyValuePair<Point, PData> p1 in Intersections)
+            {
+                if (p1.Value.dist > 0 && p1.Value.dist < mindist)
+                    mindist = p1.Value.dist;
+            }
  
+            Console.WriteLine("Day3 Part2 Result = {0}", mindist);
         }
 
-        private void GenerateWire(String[] Sections, out List<WireSection> Wire)
+        void GenerateIntersections(out Dictionary<Point, PData> Intersections)
         {
-            Wire = new List<WireSection>();
-            int x1 = 0;
-            int y1 = 0;
+            String[] Sections;
+            Intersections = new Dictionary<Point, PData>();
+            Sections = InputData[0].Split(',');
+            Dictionary<Point,PData> Wire1 = new Dictionary<Point,PData>();
+            GenerateWire(Sections, out Wire1);
+
+            Sections = InputData[1].Split(',');
+            Dictionary<Point, PData> Wire2 = new Dictionary<Point, PData>();
+            GenerateWire(Sections, out Wire2);
+
+            foreach(KeyValuePair<Point,PData> p1 in Wire1)
+            {
+                PData p2Value;
+                if (Wire2.TryGetValue(p1.Key,out p2Value))
+                { 
+                   Intersections.Add(p1.Key, new PData(p1.Value.dist + p2Value.dist));
+                }
+            }
+
+        }
+
+        private void GenerateWire(String[] Sections, out Dictionary<Point,PData> Wire)
+        {
+            Wire = new Dictionary<Point, PData>(new PointEqualityComparer());
+
+            int x = 0;
+            int y = 0;
+            int d = 1;
 
             foreach( String Section in Sections)
             {
-                int xd, yd;
-                Move(Section, out xd, out yd);
+                int xd, yd, dist;
+                Move(Section, out xd, out yd, out dist);
 
-                int x2 = x1 + xd;
-                int y2 = y1 + yd;
-
-                Wire.Add(new WireSection(Math.Min(x1,x2), Math.Min(y1,y2), Math.Max(x1,x2), Math.Max(y1,y2)));
-
-                x1 = x2;
-                y1 = y2;
+                if (xd==0)
+                {
+                    for( int ys=0; ys<dist; ys++ )
+                    {
+                        y += yd;
+                        Point pt = new Point(x, y);
+                        if (!Wire.ContainsKey(pt))
+                            Wire.Add(pt, new PData(d));
+                        d++;
+                    }
+                }
+                else if (yd==0)
+                {
+                    for (int xs = 0; xs < dist; xs++)
+                    {
+                        x += xd;
+                        Point pt = new Point(x, y);
+                        if ( !Wire.ContainsKey(pt))
+                            Wire.Add(pt, new PData(d));
+                        d++;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Argh! Diagonal movement in wire section");
+                }
             }
         }
 
-        private void Move(String Section, out int xd, out int yd)
+        private void Move(String Section, out int xd, out int yd, out int dist)
         {
             xd = 0;
             yd = 0;
-            int dist = int.Parse(Section.Substring(1));
+            dist = int.Parse(Section.Substring(1));
            
             switch (Section[0])
             {
                 case 'L':
-                    xd = -dist;
+                    xd = -1;
                     break;
                 case 'R':
-                    xd = dist;
+                    xd = 1;
                     break;
                 case 'U':
-                    yd = -dist;
+                    yd = -1;
                     break;
                 case 'D':
-                    yd = dist;
+                    yd = 1;
                     break;
                 default:
                     Console.WriteLine("Unknown Direction: {0}", Section);
