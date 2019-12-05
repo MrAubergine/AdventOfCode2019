@@ -59,7 +59,7 @@ namespace AdventOfCode2019
                         Mem[op3] = Mem[op1] * Mem[op2];
                         break;
                     default:
-                        Console.WriteLine("Day1 Part1 Program Error at {0}", ip);
+                        Console.WriteLine("Program Error at {0}", ip);
                         return false;
                 }
                 ip += 4;
