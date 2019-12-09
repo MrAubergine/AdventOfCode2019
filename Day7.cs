@@ -11,27 +11,35 @@ namespace AdventOfCode2019
         private int[] Mem;
         private List<int> Inputs;
         private List<int> Outputs;
+        private int InstructionPointer;
 
-        public void Execute(int[] Program, List<int> In, out List<int> Out)
+        public void ExecuteComplete(int[] Program, List<int> In, List<int> Out)
         {
-            Inputs = In;
-            Outputs = new List<int>();
+            Reset(Program);
+            SetIO(In, Out);
 
-            ResetMem(Program);
-
-            int ip = 0;
-            while (Step(ip, out int ipstep))
+            while (Step())
             {
-                ip += ipstep;
             }
 
-            Out = Outputs;
         }
 
-        private bool Step(int ip, out int ipstep)
+        public void Reset(int[] Program)
         {
-            int inst = Mem[ip];
-            int opcode = Mem[ip] % 100;
+            InstructionPointer = 0;
+            LoadProgram(Program);
+        }
+
+        public void SetIO(List<int> In, List<int> Out)
+        {
+            Inputs = In;
+            Outputs = Out;
+        }
+
+        public bool Step()
+        {
+            int inst = Mem[InstructionPointer];
+            int opcode = Mem[InstructionPointer] % 100;
             inst /= 100;
             int[] pmode = new int[3];
             for (int p = 0; p < 3; p++)
@@ -40,29 +48,38 @@ namespace AdventOfCode2019
                 inst /= 10;
             }
 
+            int ipstep = 0;
+
             switch (opcode)
             {
                 case 1: // Add
-                    Write(Mem[ip + 3], pmode[2], Read(Mem[ip + 1], pmode[0]) + Read(Mem[ip + 2], pmode[1]));
+                    Write(Mem[InstructionPointer + 3], pmode[2], Read(Mem[InstructionPointer + 1], pmode[0]) + Read(Mem[InstructionPointer + 2], pmode[1]));
                     ipstep = 4;
                     break;
                 case 2: // Mul
-                    Write(Mem[ip + 3], pmode[2], Read(Mem[ip + 1], pmode[0]) * Read(Mem[ip + 2], pmode[1]));
+                    Write(Mem[InstructionPointer + 3], pmode[2], Read(Mem[InstructionPointer + 1], pmode[0]) * Read(Mem[InstructionPointer + 2], pmode[1]));
                     ipstep = 4;
                     break;
                 case 3: // Read
-                    Write(Mem[ip + 1], pmode[0], Inputs[0]);
-                    Inputs.RemoveAt(0);
-                    ipstep = 2;
+                    if (Inputs.Count > 0)
+                    {
+                        Write(Mem[InstructionPointer + 1], pmode[0], Inputs[0]);
+                        Inputs.RemoveAt(0);
+                        ipstep = 2;
+                    }
+                    else
+                    {
+                        ipstep = 0;
+                    }
                     break;
                 case 4: // Write
-                    Outputs.Add(Read(Mem[ip + 1], pmode[0]));
+                    Outputs.Add(Read(Mem[InstructionPointer + 1], pmode[0]));
                     ipstep = 2;
                     break;
                 case 5: // Jump if true
-                    if (Read(Mem[ip + 1], pmode[0]) != 0)
+                    if (Read(Mem[InstructionPointer + 1], pmode[0]) != 0)
                     {
-                        ipstep = Read(Mem[ip + 2], pmode[1]) - ip;
+                        ipstep = Read(Mem[InstructionPointer + 2], pmode[1]) - InstructionPointer;
                     }
                     else
                     {
@@ -70,9 +87,9 @@ namespace AdventOfCode2019
                     }
                     break;
                 case 6: // Jump if false
-                    if (Read(Mem[ip + 1], pmode[0]) == 0)
+                    if (Read(Mem[InstructionPointer + 1], pmode[0]) == 0)
                     {
-                        ipstep = Read(Mem[ip + 2], pmode[1]) - ip;
+                        ipstep = Read(Mem[InstructionPointer + 2], pmode[1]) - InstructionPointer;
                     }
                     else
                     {
@@ -80,21 +97,21 @@ namespace AdventOfCode2019
                     }
                     break;
                 case 7: // Less than
-                    Write(Mem[ip + 3], pmode[2], (Read(Mem[ip + 1], pmode[0]) < Read(Mem[ip + 2], pmode[1])) ? 1 : 0);
+                    Write(Mem[InstructionPointer + 3], pmode[2], (Read(Mem[InstructionPointer + 1], pmode[0]) < Read(Mem[InstructionPointer + 2], pmode[1])) ? 1 : 0);
                     ipstep = 4;
                     break;
                 case 8: // Equals
-                    Write(Mem[ip + 3], pmode[2], (Read(Mem[ip + 1], pmode[0]) == Read(Mem[ip + 2], pmode[1]) ? 1 : 0));
+                    Write(Mem[InstructionPointer + 3], pmode[2], (Read(Mem[InstructionPointer + 1], pmode[0]) == Read(Mem[InstructionPointer + 2], pmode[1]) ? 1 : 0));
                     ipstep = 4;
                     break;
                 case 99: // Stop
-                    ipstep = 0;
                     return false;
                 default:
-                    Console.WriteLine("Program Error at {0}", ip);
-                    ipstep = 0;
+                    Console.WriteLine("Program Error at {0}", InstructionPointer);
                     return false;
             }
+
+            InstructionPointer += ipstep;
 
             return true;
         }
@@ -126,7 +143,7 @@ namespace AdventOfCode2019
             }
         }
 
-        private void ResetMem(int[] Program)
+        private void LoadProgram(int[] Program)
         {
             Mem = new int[Program.Length];
 
@@ -145,18 +162,23 @@ namespace AdventOfCode2019
             List<int> phase2 = new List<int>();
 
             int largest = 0;
-            FindLargestPermute(phase1, phase2, ref largest);
+            FindLargestPermutePart(phase1, phase2, ref largest);
 
             Console.WriteLine("Day2 Part1 Result = {0}", largest);
         }
 
         public void Part2()
         {
+            List<int> phase1 = new List<int>() { 5, 6, 7, 8, 9 };
+            List<int> phase2 = new List<int>();
 
-            Console.WriteLine("Day2 Part1 Result = {0}", 0);
+            int largest = 0;
+            FindLargestPermutePart(phase1, phase2, ref largest);
+
+            Console.WriteLine("Day2 Part1 Result = {0}", largest);
         }
 
-        void FindLargestPermute(List<int> phase1, List<int> phase2, ref int largest)
+        void FindLargestPermutePart(List<int> phase1, List<int> phase2, ref int largest)
         {
             int[] testphase = new int[5];
             for ( int p=0; p<phase1.Count; p++ )
@@ -175,28 +197,52 @@ namespace AdventOfCode2019
                 if (ampout > largest)
                     largest = ampout;
 
-                FindLargestPermute(newphase1, newphase2, ref largest);
+                FindLargestPermutePart(newphase1, newphase2, ref largest);
             }
         }
 
         private int RunAmp(int[] phase)
         {
-            IntCodeComputer7 amp = new IntCodeComputer7();
-            List<int> In = new List<int>();
-            List<int> Out = new List<int>();
+            IntCodeComputer7[] amp = new IntCodeComputer7[5];
+            List<int>[] In = new List<int>[5];
+            List<int>[] Out = new List<int>[5];
 
-            int inval = 0;
-            for(int a=0; a<5; a++)
+            for (int a = 0; a < 5; a++)
             {
-                In.Add(phase[a]);
-                In.Add(inval);
+                amp[a] = new IntCodeComputer7();
+                In[a] = new List<int>();
+                Out[a] = new List<int>();
 
-                amp.Execute(InputData, In, out Out);
+                amp[a].Reset(InputData);
+                amp[a].SetIO(In[a], Out[a]);
+                In[a].Add(phase[a]);
+            }
+            In[0].Add(0);
 
-                inval = Out[0];
+            int outval = -1;
+            int running = 5;
+            while (running > 0)
+            {
+                running = 0;
+                for (int a = 0; a < 5; a++)
+                {
+                    if (amp[a].Step())
+                    {
+                        running++;
+                    }
+                    if (Out[a].Count > 0)
+                    {
+                        if(a==4)
+                        {
+                            outval = Out[4][0];
+                        }
+                        In[(a + 1) % 5].Add(Out[a][0]);
+                        Out[a].RemoveAt(0);
+                    }
+                }
             }
 
-            return inval;
+            return outval;
         }
 
         /*private int[] TestData1 = new int[]
