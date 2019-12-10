@@ -11,11 +11,14 @@ namespace AdventOfCode2019
         public float x;
         public float y;
         public int v = 0;
+        public float a;
+        public float d;
     }
 
     class Day10 : IDay
     {
         List<Roid> Roids;
+        Roid Station;
 
         public void Part1()
         {
@@ -23,13 +26,12 @@ namespace AdventOfCode2019
             CalcCounts();
 
             int maxvis = 0;
-            Roid maxroid = null;
             foreach(Roid r in Roids)
             {
                 if(r.v>maxvis)
                 {
                     maxvis = r.v;
-                    maxroid = r;
+                    Station = r;
                 }
             }
 
@@ -38,7 +40,18 @@ namespace AdventOfCode2019
 
         public void Part2()
         {
-            Console.WriteLine("Day10 Part2 Result = {0}", 0);
+            CalcAngles();
+
+            float angle = 0.0f;
+            Roid r = Target(angle,false);
+            for( int a=0;a<199;a++ )
+            {
+                angle = r.a;
+                Roids.Remove(r);
+                r = Target(angle,true);
+            }
+
+            Console.WriteLine("Day10 Part2 Result = {0}", r.x*100+r.y);
         }
 
         void ReadMap(String In)
@@ -104,12 +117,55 @@ namespace AdventOfCode2019
             return true;
         }
 
+        void CalcAngles()
+        {
+            foreach(Roid r in Roids)
+            {
+                if (r == Station)
+                    continue;
+
+                r.d = (r.x - Station.x) * (r.x - Station.x) + (r.y - Station.y) * (r.y - Station.y);
+                r.a = (float)Math.Atan2(r.x - Station.x, Station.y - r.y);
+                if (r.a < 0)
+                    r.a += 2.0f*(float)Math.PI;
+            }
+        }
+
+        Roid Target(float angle, bool AngleMustBeLarger)
+        {
+            float mina = float.MaxValue;
+            float mindist = float.MaxValue;
+            Roid tr = null;
+
+            foreach(Roid r in Roids)
+            {
+                if (r == Station)
+                    continue;
+
+                float a = r.a - angle;
+                if (a < 0)
+                    a += 2.0f * (float)Math.PI;
+                if(AngleMustBeLarger && a<= 0.000001f)
+                {
+                    continue;
+                }
+                if( a<mina || (a==mina && r.d<mindist) )
+                {
+                    mina = a;
+                    mindist = r.d;
+                    tr = r;
+                }
+            }
+
+            return tr;
+        }
+
         private String TestData1 =
-      @".#..#
-        .....
-        #####
-        ....#
-        ...##";
+      @".#....#####...#..
+        ##...##.#####..##
+        ##...#...#.#####.
+        ..#.....#...###..
+        ..#.#.....#....##";
 
         private String TestData =
             @".#..##.###...#######
