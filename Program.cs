@@ -10,7 +10,7 @@ namespace AdventOfCode2019
     {
         static void Main(string[] args)
         {
-            IDay Day = new Day9();
+            IDay Day = new Day10();
 
             Day.Part1();
             Day.Part2();
